@@ -273,6 +273,7 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
       _cs149_vgt_float(clamp_mask, result, max_val, maskAll);
       _cs149_vset_float(result, 9.999999f, clamp_mask);
     }
+    _cs149_vstore_float(output+i, result, maskAll);
   }
 }
 
