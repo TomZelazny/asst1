@@ -246,11 +246,11 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
   __cs149_vec_float result;
 
   __cs149_vec_float zero = _cs149_vset_float(0.f);
-  __cs149_mask maskAll, maskIsNegative, maskIsNotNegative;
+  __cs149_mask maskAll, maskIsNotNegative, y_is_0_mask, y_is_not_0_mask, active_exp_mask, clamp_mask;
 
   for (int i=0; i<N; i+=VECTOR_WIDTH) {   
     maskAll = _cs149_init_ones(); // All ones
-    maskIsNegative = _cs149_init_ones(0); // All zeros
+
     _cs149_vload_float(x, values+i, maskAll); // x = values[i];
     _cs149_vload_float(y, exponents+i, maskAll); // y = exponents[i];
 
@@ -265,7 +265,7 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
     
     while(_cs149_cntbits(active_exp_mask) > 0){   
       _cs149_vmult_float(result, result, x, active_exp_mask);
-      _cs149_vsub_float(y, y, ones, active_exp_mask);
+      _cs149_vsub_int(y, y, _cs149_vset_int(1), active_exp_mask);
       _cs149_vgt_int(active_exp_mask, y, zero);
       _cs149_vgt_float(clamp_mask, result, _cs149_vset_float(9.999999f));
       _cs149_vset_float(result, 9.999999f, clamp_mask);
