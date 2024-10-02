@@ -16,7 +16,6 @@ typedef struct {
   double *data;
   double *clusterCentroids;
   int *clusterAssignments;
-  double *minDist;
   double *currCost;
   int M, N, K;
 } WorkerArgs;
@@ -62,25 +61,49 @@ double dist(double *x, double *y, int nDim) {
   return sqrt(accum);
 }
 
+/**
+ * Thread function that computes the cluster assignments for a subset of the data points.
+ */
 void computeAssignmentsThreadStart(int threadId, int numThreads, WorkerArgs *const args) {
   int chunkSize = args->M / numThreads;
-  int start = 0 + threadId * chunkSize;
+  int start = threadId * chunkSize;
   int end = start + chunkSize;
   if (threadId == numThreads - 1) {
     end = args->M;
   }
-  printf("Thread %d: start=%d, end=%d\n", threadId, start, end);
-  for (int k = args->start; k < args->end; k++) {
-    for (int m = start; m < end; m++) {
-      double d = dist(&args->data[m * args->N],
-                      &args->clusterCentroids[k * args->N], args->N);
-      if (d < args->minDist[m]) {
-        args->minDist[m] = d;
-        args->clusterAssignments[m] = k;
+
+  // Allocate a local minDist array for this thread
+  double* localMinDist = new double[chunkSize];
+  int* localAssignments = new int[chunkSize];
+
+  // Initialize local arrays
+  for (int m = 0; m < chunkSize; m++) {
+    localMinDist[m] = 1e30;
+    localAssignments[m] = -1;
+  }
+
+  // Compute local minDist and clusterAssignments for this thread's data chunk
+  for (int m = start; m < end; m++) {
+    for (int k = args->start; k < args->end; k++) {
+      double d = dist(&args->data[m * args->N], &args->clusterCentroids[k * args->N], args->N);
+      if (d < localMinDist[m - start]) {
+        localMinDist[m - start] = d;
+        localAssignments[m - start] = k;
       }
     }
   }
+
+  // After computation, update the shared clusterAssignments array
+  for (int m = start; m < end; m++) {
+    // args->minDist[m] = localMinDist[m - start];
+    args->clusterAssignments[m] = localAssignments[m - start];
+  }
+
+  // Free the local arrays
+  delete[] localMinDist;
+  delete[] localAssignments;
 }
+
 
 /**
  * Assigns each data point to its "closest" cluster centroid.
@@ -88,11 +111,8 @@ void computeAssignmentsThreadStart(int threadId, int numThreads, WorkerArgs *con
 void computeAssignments(WorkerArgs *const args) {
   int numThreads = thread::hardware_concurrency();
   
-  // double *minDist = new double[args->M];
-  
   // Initialize arrays
   for (int m =0; m < args->M; m++) {
-    args->minDist[m] = 1e30;
     args->clusterAssignments[m] = -1;
   }
 
@@ -109,8 +129,6 @@ void computeAssignments(WorkerArgs *const args) {
   for (int i = 0; i < numThreads; i++) {
     workers[i].join();
   }
-
-  // free(minDist);
 }
 
 /**
@@ -189,8 +207,6 @@ void computeCost(WorkerArgs *const args) {
  * @param clusterAssignments Pointer to an array of length M representing the
  *     cluster assignments of each data point, where clusterAssignments[i] = j
  *     indicates that data point i is closest to cluster centroid j.
- * @param minDist Pointer to an array of length M used to store the minimum
- *    distance from each data point to its closest cluster centroid.
  * @param M The number of data points to cluster.
  * @param N The dimensionality of the data points.
  * @param K The number of cluster centroids.
@@ -210,7 +226,6 @@ void kMeansThread(double *data, double *clusterCentroids, int *clusterAssignment
   args.data = data;
   args.clusterCentroids = clusterCentroids;
   args.clusterAssignments = clusterAssignments;
-  args.minDist = new double[M];
   args.currCost = currCost;
   args.M = M;
   args.N = N;
