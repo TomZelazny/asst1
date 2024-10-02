@@ -69,6 +69,7 @@ void computeAssignmentsThreadStart(int threadId, int numThreads, WorkerArgs *con
   if (threadId == numThreads - 1) {
     end = args->M;
   }
+  printf("Thread %d: start=%d, end=%d\n", threadId, start, end);
   for (int k = args->start; k < args->end; k++) {
     for (int m = start; m < end; m++) {
       double d = dist(&args->data[m * args->N],
@@ -98,23 +99,10 @@ void computeAssignments(WorkerArgs *const args) {
   printf("numThreads: %d\n", numThreads);
 
   std::thread workers[numThreads];
-  WorkerArgs workerArgs[numThreads];
-
-  for (int i = 0; i < numThreads; i++) {
-    workerArgs[i].start = 0;
-    workerArgs[i].end = args->K;
-    workerArgs[i].data = args->data;
-    workerArgs[i].clusterCentroids = args->clusterCentroids;
-    workerArgs[i].clusterAssignments = args->clusterAssignments;
-    workerArgs[i].minDist = args->minDist;
-    workerArgs[i].M = args->M;
-    workerArgs[i].N = args->N;
-    workerArgs[i].K = args->K;
-  }
 
   // Spawn worker threads
   for (int i = 0; i < numThreads; i++) {
-    workers[i] = std::thread(computeAssignmentsThreadStart, i, numThreads, &workerArgs[i]);
+    workers[i] = std::thread(computeAssignmentsThreadStart, i, numThreads, args);
   }
   
   // Join worker threads
