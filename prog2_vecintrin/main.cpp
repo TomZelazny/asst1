@@ -252,7 +252,7 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
   __cs149_mask maskAll, active_exp_mask, clamp_mask;
 
   for (int i=0; i<N; i+=VECTOR_WIDTH) {
-    maskAll = _cs149_init_ones(N-i); // All ones   
+    maskAll = _cs149_init_ones(N-i); // All ones
 
     _cs149_vload_float(x, values+i, maskAll); // x = values[i];
     _cs149_vload_int(y, exponents+i, maskAll); // y = exponents[i];
