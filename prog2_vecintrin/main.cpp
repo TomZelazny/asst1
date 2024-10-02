@@ -241,29 +241,23 @@ void clampedExpSerial(float* values, int* exponents, float* output, int N) {
 }
 
 void clampedExpVector(float* values, int* exponents, float* output, int N) {
+  __cs149_vec_float result;
   __cs149_vec_float x;
   __cs149_vec_int y;
-  __cs149_vec_float result;
 
   __cs149_vec_int zero = _cs149_vset_int(0);
   __cs149_vec_int ones = _cs149_vset_int(1);
   __cs149_vec_float max_val = _cs149_vset_float(9.999999f);
 
-  __cs149_mask maskAll, maskIsNotNegative, y_is_0_mask, y_is_not_0_mask, active_exp_mask, clamp_mask;
+  __cs149_mask maskAll, active_exp_mask, clamp_mask;
 
-  for (int i=0; i<N; i+=VECTOR_WIDTH) {   
-    maskAll = _cs149_init_ones(); // All ones
+  for (int i=0; i<N+VECTOR_WIDTH; i+=VECTOR_WIDTH) {   
+    maskAll = _cs149_init_ones((i < N) ? VECTOR_WIDTH : VECTOR_WIDTH - (i - N)); // All ones
 
     _cs149_vload_float(x, values+i, maskAll); // x = values[i];
     _cs149_vload_int(y, exponents+i, maskAll); // y = exponents[i];
 
-    
-    _cs149_veq_int(y_is_0_mask, y, zero, maskAll); // y_is_0_mask = (y == 0)
-    
     _cs149_vset_float(result, 1.f, maskAll); // result = 1.f;
-
-    y_is_not_0_mask = _cs149_mask_not(y_is_0_mask);
-    // _cs149_vload_float(result, values+i, y_is_not_0_mask); //   result[i] = x
     _cs149_vgt_int(active_exp_mask, y, zero, maskAll); // active_exp_mask = (y > 0)
     
     while(_cs149_cntbits(active_exp_mask) > 0){   
