@@ -37,7 +37,7 @@ int main() {
         //values[i] = .001f + 2.998f * static_cast<float>(rand()) / RAND_MAX;
         //values[i] = 1.0f;
         //values[i] = 2.998f;//.001f + 2.998f * static_cast<float>(rand()) / RAND_MAX;
-        value[i] = (i % 8 == 0) ? 2.998f : 1.0f;
+        values[i] = (i % 8 == 0) ? 2.998f : 1.0f;
     }
 
     // generate a gold version to check results
