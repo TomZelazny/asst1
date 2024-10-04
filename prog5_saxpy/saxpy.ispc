@@ -27,6 +27,11 @@ task void saxpy_ispc_task(uniform int N,
         tmp2 = tmp1 + Y[i];
         result[i] = tmp2;
     }
+
+    foreach (i = indexStart ... indexEnd) {
+        tmp1 = scale * X[i];
+        result[i] += tmp1;
+    }
 }
 
 export void saxpy_ispc_withtasks(uniform int N,
