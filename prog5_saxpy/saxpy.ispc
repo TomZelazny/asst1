@@ -24,7 +24,7 @@ task void saxpy_ispc_task(uniform int N,
     float tmp2;
 
     foreach (i = indexStart ... indexEnd) {
-        tmp2 = tmp1 + Y[i];
+        tmp2 = Y[i];
         result[i] = tmp2;
     }
 
